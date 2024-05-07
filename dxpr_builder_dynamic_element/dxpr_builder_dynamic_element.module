@@ -1,74 +1,52 @@
 <?php
 
-/**
- * @file
- * Contains alterations to JavaScript libraries for the DXPR Builder module.
- */
-
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Render\Markup;
 
 /**
- * Implements hook_library_info_alter() to adjust JS libraries.
- *
- * This function modifies the JavaScript libraries defined by the DXPR Builder
- * module, setting specific weights and minification flags, and adjusts the 
- * insertion order for frontend scripts for optimal performance.
+ * Implements hook_library_info_alter().
  */
 function dxpr_builder_dynamic_element_library_info_alter(array &$libraries, $extension) {
-  if ($extension === 'dxpr_builder') {
-    $module_handler = \Drupal::service('module_handler');
-    $jsPath = '/' . $module_handler->getModule('dxpr_builder_dynamic_element')->getPath() . '/js/';
+  // Process only libraries from the 'dxpr_builder' extension.
+  if ($extension !== 'dxpr_builder') {
+    return;
+  }
 
-    $additional_scripts = [
-      'editor.builder' => [
-        'dxpr_builder/dxpr_elements.js' => $jsPath . 'dynamic_element.js',
-      ],
-      'development' => [
-        'dxpr_builder/dxpr_elements.js' => $jsPath . 'dynamic_element.js',
-      ],
-      'production' => [
-        'dxpr_builder/dxpr_elements.js' => $jsPath . 'dynamic_element.min.js',
-      ],
-      'editor.frontend' => [
-        'dxpr_builder/dxpr_frontend.min.js' => $jsPath . 'dynamic_element_frontend.js',
-      ],
-      'editor.frontend_dev' => [
-        'dxpr_builder/dxpr_frontend.js' => $jsPath . 'dynamic_element_frontend.js',
-      ],
-    ];
+  // Retrieve the path to the module to construct script URLs.
+  $module_handler = \Drupal::service('module_handler');
+  $base_path = '/' . $module_handler->getModule('dxpr_builder_dynamic_element')->getPath() . '/js/';
 
-    foreach ($additional_scripts as $library_key => $scripts) {
-      if (isset($libraries[$library_key]['js'])) {
-        foreach ($scripts as $original_key => $script_path) {
-          if (array_key_exists($original_key, $libraries[$library_key]['js'])) {
-            $original_key_index = array_search($original_key, array_keys($libraries[$library_key]['js']));
-            $position = $original_key_index !== false ? $original_key_index : null;
+  // Define the paths to JavaScript files used in different environments.
+  $scripts = [
+    'development' => $base_path . 'dynamic_element.js',
+    'production' => $base_path . 'dynamic_element.js', // minified version
+    'frontend' => $base_path . 'dynamic_element_frontend.js'
+  ];
 
-            if ($position !== null) {
-              $is_frontend = strpos($library_key, 'frontend') !== false;
-              $weight = $is_frontend ? 0 : -4;
-              $minified = strpos($script_path, '.min.js') !== false;
+  // Define which library keys will use which scripts.
+  $library_keys = [
+    'editor.builder' => 'development',
+    'production' => 'production',
+    'development' => 'development',
+    'editor.frontend' => 'frontend',
+    'editor.frontend_dev' => 'frontend'
+  ];
 
-              // Determine the position adjustment based on frontend status.
-              $adjustment = $is_frontend ? 0 : 1;
-
-              $new_js = [
-                $script_path => [
-                  'weight' => $weight,
-                  'minified' => $minified,
-                ]
-              ];
-
-              // Merge arrays placing the new script before or after the original based on frontend status.
-              $libraries[$library_key]['js'] = array_merge(
-                array_slice($libraries[$library_key]['js'], 0, $position + $adjustment, true),
-                $new_js,
-                array_slice($libraries[$library_key]['js'], $position + $adjustment, null, true)
-              );
-            }
-          }
-        }
-      }
+  // Loop through the defined keys and assign scripts with weights.
+  foreach ($library_keys as $key => $script_key) {
+    $weight = 0;  // Default weight.
+    switch ($key) {
+      case 'editor.builder':
+      case 'development':
+      case 'production':
+        $weight = -4;  // Load before dxpr_elements.js.
+        break;
+      case 'editor.frontend':
+      case 'editor.frontend_dev':
+        $weight = -1;  // Load before dxpr_frontend.js.
+        break;
     }
+    // Assign the script with the calculated weight to the library.
+    $libraries[$key]['js'][$scripts[$script_key]] = ['weight' => $weight];
   }
 }

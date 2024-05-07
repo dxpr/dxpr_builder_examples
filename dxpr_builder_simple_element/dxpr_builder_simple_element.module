@@ -1,60 +1,52 @@
 <?php
 
-/**
- * @file
- * Description.
- */
-
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Render\Markup;
 
 /**
  * Implements hook_library_info_alter().
  */
 function dxpr_builder_simple_element_library_info_alter(array &$libraries, $extension) {
-  if ($extension === 'dxpr_builder') {
-    $module_handler = \Drupal::service('module_handler');
-    $path = '/' . $module_handler->getModule('dxpr_builder_simple_element')->getPath() . '/js/';
+  // Process only libraries from the 'dxpr_builder' extension.
+  if ($extension !== 'dxpr_builder') {
+    return;
+  }
 
-    // Define the additional scripts to add.
-    $additional_scripts = [
-      'editor.builder' => [
-        'dxpr_builder/dxpr_elements.js' => $path . 'simple_element.js',
-      ],
-      'development' => [
-        'dxpr_builder/dxpr_elements.js' => $path . 'simple_element.js',
-      ],
-      'production' => [
-        'dxpr_builder/dxpr_elements.js' => $path . 'simple_element.min.js',
-      ],
-    ];
+  // Retrieve the path to the module to construct script URLs.
+  $module_handler = \Drupal::service('module_handler');
+  $base_path = '/' . $module_handler->getModule('dxpr_builder_simple_element')->getPath() . '/js/';
 
-    // Iterate over the defined additional scripts and add them to the library.
-    foreach ($additional_scripts as $library_key => $scripts) {
-      if (isset($libraries[$library_key]['js'])) {
-        foreach ($scripts as $original_key => $script_path) {
-          // Check if the original script exists in the library.
-          if (array_key_exists($original_key, $libraries[$library_key]['js'])) {
-            // Append the new script after the original.
-            $original_key_index = array_search($original_key, array_keys($libraries[$library_key]['js']));
-            $position = $original_key_index !== false ? $original_key_index + 1 : null;
+  // Define the paths to JavaScript files used in different environments.
+  $scripts = [
+    'development' => $base_path . 'simple_element.js',
+    'production' => $base_path . 'simple_element.js', // minified version
+    'frontend' => $base_path . 'simple_element_frontend.js'
+  ];
 
-            if ($position !== null) {
-              // Insert the new script into the array at the calculated position.
-              $new_js = [
-                $script_path => [
-                  'weight' => -4,
-                  'minified' => TRUE,
-                ]
-              ];
-              $libraries[$library_key]['js'] = array_merge(
-                array_slice($libraries[$library_key]['js'], 0, $position, true),
-                $new_js,
-                array_slice($libraries[$library_key]['js'], $position, null, true)
-              );
-            }
-          }
-        }
-      }
+  // Define which library keys will use which scripts.
+  $library_keys = [
+    'editor.builder' => 'development',
+    'production' => 'production',
+    'development' => 'development',
+    'editor.frontend' => 'frontend',
+    'editor.frontend_dev' => 'frontend'
+  ];
+
+  // Loop through the defined keys and assign scripts with weights.
+  foreach ($library_keys as $key => $script_key) {
+    $weight = 0;  // Default weight.
+    switch ($key) {
+      case 'editor.builder':
+      case 'development':
+      case 'production':
+        $weight = -4;  // Load before dxpr_elements.js.
+        break;
+      case 'editor.frontend':
+      case 'editor.frontend_dev':
+        $weight = -1;  // Load before dxpr_frontend.js.
+        break;
     }
+    // Assign the script with the calculated weight to the library.
+    $libraries[$key]['js'][$scripts[$script_key]] = ['weight' => $weight];
   }
 }
