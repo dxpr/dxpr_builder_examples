@@ -1,0 +1,9 @@
+name: DXPR Builder Simple Element
+description: Adds an Simple Element to DXPR Builder.
+project status url: http://dxpr.local/release-history
+type: module
+package: DXPR
+core_version_requirement: '>=9.3'
+# dependencies:
+#   - dxpr_builder:dxpr_builder (>=2.0.0)
+project: 'dxpr_builder_simple_element'

@@ -1,0 +1,26 @@
+{#
+/**
+ * @file
+ * Counter template
+ *
+ * Available variables:
+ * - id: Counter id.
+ * - class: Counter class list.
+ * - style: Counter style attribute.
+ * - start: counter start value.
+ *
+ */
+#}
+    
+{% spaceless %}
+<div class="az-element az-dynamic-element">
+    <div  id="{{id}}"
+        class="{{class}}"
+        style="{{style}}"
+        data-dxpr-builder-libraries="countto waypoints">
+
+    {{start}}
+
+    </div>
+</div>
+{% endspaceless %}
