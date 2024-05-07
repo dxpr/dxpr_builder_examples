@@ -1,18 +1,29 @@
 /* global FILE_UPLOAD_MAX_SIZE */
 
+/**
+ * @file
+ * Defines a new drag-and-drop video element for DXPR Builder.
+ *
+ * This script adds a customizable video element to the DXPR Builder's UI,
+ * allowing users to configure various settings through a dynamic form.
+ * Each configuration option is documented to assist developers in
+ * understanding and potentially extending these functionalities.
+ */
+
 (function ($) {
+  // Registers a new video element configuration in DXPR Builder's list.
   window.dxprBuilder.dxpr_elements.push({
-    base: "simple_element",
-    name: Drupal.t("Simple Element"),
-    icon: "et et-icon-video",
+    base: "simple_element", // Unique identifier for the element.
+    name: Drupal.t("Simple Element"), // Human-readable name of the element.
+    nameEn: "Simple Element", // Non-translatable english name of the element.
+    icon: "et et-icon-video", // Icon class for the element, shown in the UI.
+
+    // Describes the properties that can be configured for this element.
     params: [
       {
         type: "video",
         heading: Drupal.t("Video"),
-        description: Drupal.t(
-          "Allowed files: MP4, WEBM, OGG, OGV. Max size: @FILE_UPLOAD_MAX_SIZE MB",
-          { "@FILE_UPLOAD_MAX_SIZE": FILE_UPLOAD_MAX_SIZE },
-        ),
+        description: Drupal.t("Allowed files: MP4, WEBM, OGG, OGV. Max size: @FILE_UPLOAD_MAX_SIZE MB", {"@FILE_UPLOAD_MAX_SIZE": FILE_UPLOAD_MAX_SIZE}),
         param_name: "video",
       },
       {
@@ -24,9 +35,7 @@
         type: "checkbox",
         heading: Drupal.t("Controls"),
         param_name: "controls",
-        value: {
-          controls: Drupal.t("Yes"),
-        },
+        value: { controls: Drupal.t("Yes") },
       },
       {
         type: "textfield",
@@ -97,26 +106,23 @@
         type: "textarea",
         heading: Drupal.t("Example textarea"),
         param_name: "example_textarea",
-        value: Drupal.t(
-          "This is a placeholder text. Your actual content will go here. Edit this to include your own information.",
-        ),
+        value: Drupal.t("This is a placeholder text. Your actual content will go here. Edit this to include your own information."),
       },
     ],
-    show_settings_on_create: true,
+    show_settings_on_create: true, // Determines whether settings modal is displayed when element is added.
+
+    // Render function: Generates the HTML structure for the element.
     render(...args) {
-      this.dom_element = $(
-        `<div class="az-element az-video ${this.get_el_classes()}"></div>`,
-      );
+      this.dom_element = $(`<div class="az-element az-video ${this.get_el_classes()}"></div>`);
       const content_classes = this.get_content_classes();
       const mute = this.attrs.autoplay ? "muted" : this.attrs.mute;
-      const video = $(
-        `<video class="az-video-content ${content_classes}" src="${this.attrs.video}" ${this.attrs.autoplay} ${mute} ${this.attrs.controls} ${this.attrs.loop}>`,
-      );
+      const video = $(`<video class="az-video-content ${content_classes}" src="${this.attrs.video}" ${this.attrs.autoplay} ${mute} ${this.attrs.controls} ${this.attrs.loop}>`);
 
       if (this.attrs.style) {
         video.attr("style", this.attrs.style);
       }
       if (this.attrs.width) {
+
         video.attr("width", this.attrs.width);
       }
       if (this.attrs.image) {
